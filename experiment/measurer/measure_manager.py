@@ -1,4 +1,5 @@
 # Copyright 2020 Google LLC
+# Modifications copyright 2021 FixReverter
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,6 +46,8 @@ from experiment.build import build_utils
 from experiment.measurer import coverage_utils
 from experiment.measurer import run_coverage
 from experiment.measurer import run_crashes
+from experiment.measurer import fixreverter_run_coverage
+from experiment.measurer import fixreverter_run_crashes
 from experiment import scheduler
 
 logger = logs.Logger('measurer')  # pylint: disable=invalid-name
@@ -539,6 +542,46 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
                              crash_stacktrace=crash.crash_stacktrace))
         return crashes
 
+    def process_fixreverter_coverage(self, cycle):
+        """Process and return fixreverter coverage."""
+
+        logs.info('Processing fixreverter coverage for cycle %d.', cycle)
+        app_binary = coverage_utils.get_coverage_binary(self.benchmark)
+        fixreverter_cov = fixreverter_run_coverage.do_coverage_run(app_binary,
+                                                    self.corpus_dir)
+
+        reaches = []
+        for i in fixreverter_cov.reaches:
+          reaches.append(
+                models.FixReverterReach(fixreverter_reach_key = f'{self.benchmark}:{i}'))
+
+        triggers = []
+        for i in fixreverter_cov.triggers:
+          triggers.append(
+                models.FixReverterTrigger(fixreverter_trigger_key = f'{self.benchmark}:{i}'))
+          
+        return fixreverter_run_coverage.FixReverterCov(reaches, triggers)
+
+    def process_fixreverter_crashes(self, cycle):
+        """Process and store fixreverter crashes."""
+
+        if not os.listdir(self.crashes_dir):
+            logs.info('No crashes found for cycle %d.', cycle)
+            return []
+
+        logs.info('Processing fixreverter crashes for cycle %d.', cycle)
+        app_binary = coverage_utils.get_coverage_binary(self.benchmark)
+        crash_metadata = fixreverter_run_crashes.do_crashes_run(app_binary,
+                                                    self.crashes_dir, self.benchmark)
+
+        crashes = []
+        for crash_key in crash_metadata:
+            crash = crash_metadata[crash_key]
+            crashes.append(
+                models.FixReverterCrash(fixreverter_crash_key=crash_key,
+                             fixreverter_crash_testcase=crash.crash_testcase))
+        return crashes
+
     def update_measured_files(self):
         """Updates the measured-files.txt file for this trial with
         files measured in this snapshot."""
@@ -664,6 +707,12 @@ def measure_snapshot_coverage(  # pylint: disable=too-many-locals
     # Run crashes again, parse stacktraces and generate crash signatures.
     crashes = snapshot_measurer.process_crashes(cycle)
 
+    # Run fixreverter coverage on the new corpus units
+    fixreverter_cov = snapshot_measurer.process_fixreverter_coverage(cycle)
+
+    # Run fixreverter crashes on the crashing units
+    fixreverter_crashes = snapshot_measurer.process_fixreverter_crashes(cycle)
+
     # Get the coverage of the new corpus units.
     regions_covered = snapshot_measurer.get_current_coverage()
     fuzzer_stats_data = snapshot_measurer.get_fuzzer_stats(cycle)
@@ -671,7 +720,10 @@ def measure_snapshot_coverage(  # pylint: disable=too-many-locals
                                trial_id=trial_num,
                                edges_covered=regions_covered,
                                fuzzer_stats=fuzzer_stats_data,
-                               crashes=crashes)
+                               crashes=crashes,
+                               fixreverter_reaches=fixreverter_cov.reaches,
+                               fixreverter_triggers=fixreverter_cov.triggers,
+                               fixreverter_crashes=fixreverter_crashes)
 
     # Record the new corpus files.
     snapshot_measurer.update_measured_files()
