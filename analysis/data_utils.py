@@ -46,7 +46,8 @@ def drop_uninteresting_columns(experiment_df):
     """Returns table with only interesting columns."""
     columns_to_keep = [
         'benchmark', 'fuzzer', 'trial_id', 'time', 'edges_covered',
-        'bugs_covered', 'experiment', 'experiment_filestore'
+        'bugs_covered', 'experiment', 'experiment_filestore',
+        'fixreverter_reach_covered', 'fixreverter_trigger_covered'
     ]
     # Remove extra columns, keep interesting ones.
     experiment_df = experiment_df[columns_to_keep]
@@ -123,6 +124,34 @@ def add_bugs_covered_column(experiment_df):
     df['bugs_covered'] = (
         df.groupby(grouping3)['bugs_cumsum'].transform('max').astype(int))
     new_df = df.drop(columns=['bugs_cumsum', 'firsts'])
+    return new_df
+
+def add_fixreverter_reach_covered_column(experiment_df):
+    """Return a modified experiment df in which adds a |fixreverter_reach_covered| column,
+    a cumulative count of fixreverter injections reached over time."""
+    grouping1 = ['fuzzer', 'benchmark', 'trial_id', 'fixreverter_reach_key']
+    grouping2 = ['fuzzer', 'benchmark', 'trial_id']
+    grouping3 = ['fuzzer', 'benchmark', 'trial_id', 'time']
+    df = experiment_df.sort_values(grouping3)
+    df['firsts'] = ~df.duplicated(subset=grouping1) & ~df.fixreverter_reach_key.isna()
+    df['reach_cumsum'] = df.groupby(grouping2)['firsts'].transform('cumsum')
+    df['fixreverter_reach_covered'] = (
+        df.groupby(grouping3)['reach_cumsum'].transform('max').astype(int))
+    new_df = df.drop(columns=['reach_cumsum', 'firsts'])
+    return new_df
+
+def add_fixreverter_trigger_covered_column(experiment_df):
+    """Return a modified experiment df in which adds a |fixreverter_trigger_covered| column,
+    a cumulative count of fixreverter injections triggered over time."""
+    grouping1 = ['fuzzer', 'benchmark', 'trial_id', 'fixreverter_trigger_key']
+    grouping2 = ['fuzzer', 'benchmark', 'trial_id']
+    grouping3 = ['fuzzer', 'benchmark', 'trial_id', 'time']
+    df = experiment_df.sort_values(grouping3)
+    df['firsts'] = ~df.duplicated(subset=grouping1) & ~df.fixreverter_trigger_key.isna()
+    df['trigger_cumsum'] = df.groupby(grouping2)['firsts'].transform('cumsum')
+    df['fixreverter_trigger_covered'] = (
+        df.groupby(grouping3)['trigger_cumsum'].transform('max').astype(int))
+    new_df = df.drop(columns=['trigger_cumsum', 'firsts'])
     return new_df
 
 

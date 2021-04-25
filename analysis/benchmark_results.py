@@ -442,3 +442,39 @@ class BenchmarkResults:
         """Bug coverage growth plot (logscale)."""
         return self._coverage_growth_plot(
             'bug_coverage_growth_plot_logscale.svg', interest="bugs_covered", logscale=True)
+
+    @property
+    def fixreverter_reach_coverage_growth_plot(self):
+        """Bug coverage growth plot (linear scale)."""
+        return self._coverage_growth_plot('fixreverter_reach_coverage_growth_plot.svg',
+                                          interest="fixreverter_reach_covered")
+
+    @property
+    def fixreverter_reach_coverage_growth_plot_logscale(self):
+        """Bug coverage growth plot (logscale)."""
+        return self._coverage_growth_plot(
+            'fixreverter_reach_coverage_growth_plot_logscale.svg', interest="fixreverter_reach_covered", logscale=True)
+
+    @property
+    def fixreverter_trigger_coverage_growth_plot(self):
+        """Bug coverage growth plot (linear scale)."""
+        return self._coverage_growth_plot('fixreverter_trigger_coverage_growth_plot.svg',
+                                          interest="fixreverter_trigger_covered")
+
+    @property
+    def fixreverter_trigger_coverage_growth_plot_logscale(self):
+        """Bug coverage growth plot (logscale)."""
+        return self._coverage_growth_plot(
+            'fixreverter_trigger_coverage_growth_plot_logscale.svg', interest="fixreverter_trigger_covered", logscale=True)
+
+    @property
+    def fixreverter_crash_coverage_growth_plot(self):
+        """Bug coverage growth plot (linear scale)."""
+        return self._coverage_growth_plot('fixreverter_crash_coverage_growth_plot.svg',
+                                          interest="fixreverter_crash_covered")
+
+    @property
+    def fixreverter_crash_coverage_growth_plot_logscale(self):
+        """Bug coverage growth plot (logscale)."""
+        return self._coverage_growth_plot(
+            'fixreverter_crash_coverage_growth_plot_logscale.svg', interest="fixreverter_crash_covered", logscale=True)

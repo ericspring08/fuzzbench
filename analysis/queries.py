@@ -17,7 +17,7 @@ import pandas as pd
 
 from sqlalchemy import and_
 
-from database.models import Experiment, Trial, Snapshot, Crash
+from database.models import Experiment, Trial, Snapshot, Crash, FixReverterReach, FixReverterTrigger, FixReverterCrash
 from database import utils as db_utils
 
 
@@ -29,13 +29,23 @@ def get_experiment_data(experiment_names):
         Trial.experiment, Trial.fuzzer, Trial.benchmark,
         Trial.time_started, Trial.time_ended,
         Snapshot.trial_id, Snapshot.time, Snapshot.edges_covered,
-        Snapshot.fuzzer_stats, Crash.crash_key)\
+        Snapshot.fuzzer_stats, Crash.crash_key,
+        FixReverterReach.fixreverter_reach_key,FixReverterTrigger.fixreverter_trigger_key, FixReverterCrash.fixreverter_crash_key)\
         .select_from(Experiment)\
         .join(Trial)\
         .join(Snapshot)\
         .join(Crash,
               and_(Snapshot.time == Crash.time,
                    Snapshot.trial_id == Crash.trial_id), isouter=True)\
+        .join(FixReverterReach,
+              and_(Snapshot.time == FixReverterReach.time,
+                   Snapshot.trial_id == FixReverterReach.trial_id), isouter=True)\
+        .join(FixReverterTrigger,
+              and_(Snapshot.time == FixReverterTrigger.time,
+                   Snapshot.trial_id == FixReverterTrigger.trial_id), isouter=True)\
+        .join(FixReverterCrash,
+              and_(Snapshot.time == FixReverterCrash.time,
+                   Snapshot.trial_id == FixReverterCrash.trial_id), isouter=True)\
         .filter(Experiment.name.in_(experiment_names))\
         .filter(Trial.preempted.is_(False))
 
