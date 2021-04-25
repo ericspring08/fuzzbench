@@ -1,4 +1,5 @@
 # Copyright 2020 Google LLC
+# Modifications copyright 2021 FixReverter
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -78,6 +79,24 @@ class Snapshot(Base):
         primaryjoin=
         'and_(Snapshot.time==Crash.time, Snapshot.trial_id==Crash.trial_id)')
 
+    fixreverter_reaches = sqlalchemy.orm.relationship(
+        'FixReverterReach',
+        backref='snapshot',
+        primaryjoin=
+        'and_(Snapshot.time==FixReverterReach.time, Snapshot.trial_id==FixReverterReach.trial_id)')
+
+    fixreverter_triggers = sqlalchemy.orm.relationship(
+        'FixReverterTrigger',
+        backref='snapshot',
+        primaryjoin=
+        'and_(Snapshot.time==FixReverterTrigger.time, Snapshot.trial_id==FixReverterTrigger.trial_id)')
+
+    fixreverter_crashes = sqlalchemy.orm.relationship(
+        'FixReverterCrash',
+        backref='snapshot',
+        primaryjoin=
+        'and_(Snapshot.time==FixReverterCrash.time, Snapshot.trial_id==FixReverterCrash.trial_id)')
+
 
 class Crash(Base):
     """Represents crashes found in experiments."""
@@ -91,6 +110,40 @@ class Crash(Base):
     crash_state = Column(String, nullable=False)
     crash_stacktrace = Column(String, nullable=False)
     crash_testcase = Column(String, nullable=False)
+
+    __table_args__ = (ForeignKeyConstraint(
+        [time, trial_id], ['snapshot.time', 'snapshot.trial_id']),)
+
+class FixReverterReach(Base):
+    """Represents fixreverter injections reached in experiments."""
+    __tablename__ = 'fixreverter_reach'
+
+    time = Column(Integer, nullable=False, primary_key=True)
+    trial_id = Column(Integer, nullable=False, primary_key=True)
+    fixreverter_reach_key = Column(String, nullable=False, primary_key=True)
+
+    __table_args__ = (ForeignKeyConstraint(
+        [time, trial_id], ['snapshot.time', 'snapshot.trial_id']),)
+
+class FixReverterTrigger(Base):
+    """Represents fixreverter injections triggered in experiments."""
+    __tablename__ = 'fixreverter_trigger'
+
+    time = Column(Integer, nullable=False, primary_key=True)
+    trial_id = Column(Integer, nullable=False, primary_key=True)
+    fixreverter_trigger_key = Column(String, nullable=False, primary_key=True)
+
+    __table_args__ = (ForeignKeyConstraint(
+        [time, trial_id], ['snapshot.time', 'snapshot.trial_id']),)
+
+class FixReverterCrash(Base):
+    """Represents fixreverter injections crashed in experiments."""
+    __tablename__ = 'fixreverter_crash'
+
+    time = Column(Integer, nullable=False, primary_key=True)
+    trial_id = Column(Integer, nullable=False, primary_key=True)
+    fixreverter_crash_key = Column(String, nullable=False, primary_key=True)
+    fixreverter_crash_testcase = Column(String, nullable=False)
 
     __table_args__ = (ForeignKeyConstraint(
         [time, trial_id], ['snapshot.time', 'snapshot.trial_id']),)
