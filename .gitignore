@@ -40,4 +40,4 @@ docker/generated.mk
 .vscode
 
 # All benchmarks
-benchmarks/*
+benchmarks/
