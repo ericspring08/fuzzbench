@@ -141,7 +141,7 @@ class Plotter:
                              benchmark_df,
                              axes=None,
                              logscale=False,
-                             bugs=False):
+                             interest="edges_covered"):
         """Draws edge (or bug) coverage growth plot on given |axes|.
 
         The fuzzer labels will be in the order of their mean coverage at the
@@ -149,7 +149,7 @@ class Plotter:
         """
         self._common_datafame_checks(benchmark_df)
 
-        column_of_interest = 'bugs_covered' if bugs else 'edges_covered'
+        column_of_interest = interest
 
         benchmark_snapshot_df = data_utils.get_benchmark_snapshot(benchmark_df)
         snapshot_time = benchmark_snapshot_df.time.unique()[0]
@@ -162,7 +162,7 @@ class Plotter:
             hue='fuzzer',
             hue_order=fuzzer_order,
             data=benchmark_df[benchmark_df.time <= snapshot_time],
-            ci=None if bugs or self._quick else 95,
+            ci=None if interest!="edges_covered" or self._quick else 95,
             estimator=np.median,
             palette=self._fuzzer_colors,
             style='fuzzer',
@@ -181,7 +181,12 @@ class Plotter:
                     loc='upper left',
                     frameon=False)
 
-        axes.set(ylabel='Bug coverage' if bugs else 'Code region coverage')
+        ylabels = {"bugs_covered": "Bug coverage",
+                    "edges_covered": "Code region coverage",
+                    "fixreverter_reach_covered": "FixReverter reach coverage",
+                    "fixreverter_trigger_covered": "FixReverter trigger coverage",
+                    "fixreverter_crash_covered": "FixReverter crash coverage"}
+        axes.set(ylabel=ylabels[interest])
         axes.set(xlabel='Time (hour:minute)')
 
         if self._logscale or logscale:
@@ -208,19 +213,19 @@ class Plotter:
             image_path,
             wide=False,
             logscale=False,
-            bugs=False):
+            interest="edges_covered"):
         """Writes coverage growth plot."""
         self._write_plot_to_image(self.coverage_growth_plot,
                                   benchmark_df,
                                   image_path,
                                   wide=wide,
                                   logscale=logscale,
-                                  bugs=bugs)
+                                  interest=interest)
 
     def box_or_violin_plot(self,
                            benchmark_snapshot_df,
                            axes=None,
-                           bugs=False,
+                           interest="edges_covered",
                            violin=False):
         """Draws a box or violin plot based on parameter.
 
@@ -231,7 +236,7 @@ class Plotter:
         """
         self._common_datafame_checks(benchmark_snapshot_df, snapshot=True)
 
-        column_of_interest = 'bugs_covered' if bugs else 'edges_covered'
+        column_of_interest = interest
 
         fuzzer_order = data_utils.benchmark_rank_by_median(
             benchmark_snapshot_df, key=column_of_interest).index
@@ -260,8 +265,12 @@ class Plotter:
             sns.stripplot(**common_args, size=3, color="black", alpha=0.6)
 
         axes.set_title(_formatted_title(benchmark_snapshot_df))
-        ylabel = 'Reached {} coverage'.format('bug' if bugs else 'region')
-        axes.set(ylabel=ylabel)
+        ylabels = {"bugs_covered": "Bug coverage",
+                    "edges_covered": "Code region coverage",
+                    "fixreverter_reach_covered": "FixReverter reach coverage",
+                    "fixreverter_trigger_covered": "FixReverter trigger coverage",
+                    "fixreverter_crash_covered": "FixReverter crash coverage"}
+        axes.set(ylabel=ylabels[interest])
         axes.set(xlabel='Fuzzer (highest median coverage on the left)')
         axes.set_xticklabels(axes.get_xticklabels(),
                              rotation=_DEFAULT_LABEL_ROTATION,
@@ -269,29 +278,29 @@ class Plotter:
 
         sns.despine(ax=axes, trim=True)
 
-    def write_violin_plot(self, benchmark_snapshot_df, image_path, bugs=False):
+    def write_violin_plot(self, benchmark_snapshot_df, image_path, interest="edges_covered"):
         """Writes violin plot."""
         self._write_plot_to_image(self.box_or_violin_plot,
                                   benchmark_snapshot_df,
                                   image_path,
-                                  bugs=bugs,
+                                  interest=interest,
                                   violin=True)
 
-    def write_box_plot(self, benchmark_snapshot_df, image_path, bugs=False):
+    def write_box_plot(self, benchmark_snapshot_df, image_path, interest="edges_covered"):
         """Writes box plot."""
         self._write_plot_to_image(self.box_or_violin_plot,
                                   benchmark_snapshot_df,
                                   image_path,
-                                  bugs=bugs)
+                                  interest=interest)
 
-    def distribution_plot(self, benchmark_snapshot_df, axes=None, bugs=False):
+    def distribution_plot(self, benchmark_snapshot_df, axes=None, interest="edges_covered"):
         """Draws distribution plot.
 
         The fuzzer labels will be in the order of their median coverage.
         """
         self._common_datafame_checks(benchmark_snapshot_df, snapshot=True)
 
-        column_of_interest = 'bugs_covered' if bugs else 'edges_covered'
+        column_of_interest = interest
 
         fuzzers_in_order = data_utils.benchmark_rank_by_median(
             benchmark_snapshot_df, key=column_of_interest).index
@@ -307,7 +316,12 @@ class Plotter:
         axes.set_title(_formatted_title(benchmark_snapshot_df))
         axes.legend(loc='upper right', frameon=False)
 
-        axes.set(xlabel='Bug coverage' if bugs else 'Code region coverage')
+        xlabels = {"bugs_covered": "Bug coverage",
+                    "edges_covered": "Code region coverage",
+                    "fixreverter_reach_covered": "FixReverter reach coverage",
+                    "fixreverter_trigger_covered": "FixReverter trigger coverage",
+                    "fixreverter_crash_covered": "FixReverter crash coverage"}
+        axes.set(xlabel=xlabels[interest])
         axes.set(ylabel='Density')
         axes.set_xticklabels(axes.get_xticklabels(),
                              rotation=_DEFAULT_LABEL_ROTATION,
@@ -318,14 +332,14 @@ class Plotter:
         self._write_plot_to_image(self.distribution_plot, benchmark_snapshot_df,
                                   image_path)
 
-    def ranking_plot(self, benchmark_snapshot_df, axes=None, bugs=False):
+    def ranking_plot(self, benchmark_snapshot_df, axes=None, interest="edges_covered"):
         """Draws ranking plot.
 
         The fuzzer labels will be in the order of their median coverage.
         """
         self._common_datafame_checks(benchmark_snapshot_df, snapshot=True)
 
-        column_of_interest = 'bugs_covered' if bugs else 'edges_covered'
+        column_of_interest = interest
 
         fuzzer_order = data_utils.benchmark_rank_by_median(
             benchmark_snapshot_df, key=column_of_interest).index
@@ -339,8 +353,12 @@ class Plotter:
                            ax=axes)
 
         axes.set_title(_formatted_title(benchmark_snapshot_df))
-        ylabel = 'Reached {} coverage'.format('bug' if bugs else 'region')
-        axes.set(ylabel=ylabel)
+        ylabels = {"bugs_covered": "Bug coverage",
+                    "edges_covered": "Code region coverage",
+                    "fixreverter_reach_covered": "FixReverter reach coverage",
+                    "fixreverter_trigger_covered": "FixReverter trigger coverage",
+                    "fixreverter_crash_covered": "FixReverter crash coverage"}
+        axes.set(ylabel=ylabels[interest])
         axes.set(xlabel='Fuzzer (highest median coverage on the left)')
         axes.set_xticklabels(axes.get_xticklabels(),
                              rotation=_DEFAULT_LABEL_ROTATION,
