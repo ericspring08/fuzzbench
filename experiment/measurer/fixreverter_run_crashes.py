@@ -139,12 +139,12 @@ def parseFixReverterLog(output: list) -> set:
       triggers.add(injectionID)
   return triggers
 
-def _get_crash_key(crash_result, benchmark):
-    indices = ','.join(str(i) for i in sorted(crash_result.triggers))
-    return f'{benchmark}:{indices}'
+def _get_crash_key(crash_result):
+    return '+'.join(str(i) for i in sorted(crash_result.triggers))
 
 
-def do_crashes_run(app_binary, crashes_dir, benchmark):
+
+def do_crashes_run(app_binary, crashes_dir):
     """Does a crashes run of |app_binary| on |crashes_dir|. Returns a list of
     unique crashes."""
     crashes = {}
@@ -155,5 +155,5 @@ def do_crashes_run(app_binary, crashes_dir, benchmark):
             for crashset in crashesets:
                 crash = Crash(crash_testcase=os.path.relpath(crash_testcase_path, crashes_dir),
                     triggers=crashset)
-                crashes[_get_crash_key(crash, benchmark)] = crash
+                crashes[_get_crash_key(crash)] = crash
     return crashes

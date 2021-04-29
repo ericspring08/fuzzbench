@@ -34,7 +34,10 @@ def validate_data(experiment_df):
         'time_ended',
         'time',
         'edges_covered',
-        'crash_key',
+        'crashes',
+        'fr_reaches',
+        'fr_triggers',
+        'fr_crashes'
     }
     missing_columns = expected_columns.difference(experiment_df.columns)
     if missing_columns:
@@ -47,7 +50,8 @@ def drop_uninteresting_columns(experiment_df):
     columns_to_keep = [
         'benchmark', 'fuzzer', 'trial_id', 'time', 'edges_covered',
         'bugs_covered', 'experiment', 'experiment_filestore',
-        'fixreverter_reach_covered', 'fixreverter_trigger_covered'
+        'fixreverter_reach_covered', 'fixreverter_trigger_covered',
+        'fixreverter_crash_covered'
     ]
     # Remove extra columns, keep interesting ones.
     experiment_df = experiment_df[columns_to_keep]
@@ -118,12 +122,14 @@ def add_bugs_covered_column(experiment_df):
     grouping1 = ['fuzzer', 'benchmark', 'trial_id', 'crash_key']
     grouping2 = ['fuzzer', 'benchmark', 'trial_id']
     grouping3 = ['fuzzer', 'benchmark', 'trial_id', 'time']
+
     df = experiment_df.sort_values(grouping3)
+    df = df.assign(crash_key=df['crashes'].str.split(',')).explode('crash_key')
     df['firsts'] = ~df.duplicated(subset=grouping1) & ~df.crash_key.isna()
     df['bugs_cumsum'] = df.groupby(grouping2)['firsts'].transform('cumsum')
     df['bugs_covered'] = (
         df.groupby(grouping3)['bugs_cumsum'].transform('max').astype(int))
-    new_df = df.drop(columns=['bugs_cumsum', 'firsts'])
+    new_df = df.drop(columns=['bugs_cumsum', 'firsts', 'crash_key']).drop_duplicates(subset=grouping3)
     return new_df
 
 def add_fixreverter_reach_covered_column(experiment_df):
@@ -133,11 +139,12 @@ def add_fixreverter_reach_covered_column(experiment_df):
     grouping2 = ['fuzzer', 'benchmark', 'trial_id']
     grouping3 = ['fuzzer', 'benchmark', 'trial_id', 'time']
     df = experiment_df.sort_values(grouping3)
+    df = df.assign(fixreverter_reach_key=df['fr_reaches'].str.split(',')).explode('fixreverter_reach_key')
     df['firsts'] = ~df.duplicated(subset=grouping1) & ~df.fixreverter_reach_key.isna()
     df['reach_cumsum'] = df.groupby(grouping2)['firsts'].transform('cumsum')
     df['fixreverter_reach_covered'] = (
         df.groupby(grouping3)['reach_cumsum'].transform('max').astype(int))
-    new_df = df.drop(columns=['reach_cumsum', 'firsts'])
+    new_df = df.drop(columns=['reach_cumsum', 'firsts', 'fixreverter_reach_key']).drop_duplicates(subset=grouping3)
     return new_df
 
 def add_fixreverter_trigger_covered_column(experiment_df):
@@ -147,13 +154,28 @@ def add_fixreverter_trigger_covered_column(experiment_df):
     grouping2 = ['fuzzer', 'benchmark', 'trial_id']
     grouping3 = ['fuzzer', 'benchmark', 'trial_id', 'time']
     df = experiment_df.sort_values(grouping3)
+    df = df.assign(fixreverter_trigger_key=df['fr_triggers'].str.split(',')).explode('fixreverter_trigger_key')
     df['firsts'] = ~df.duplicated(subset=grouping1) & ~df.fixreverter_trigger_key.isna()
     df['trigger_cumsum'] = df.groupby(grouping2)['firsts'].transform('cumsum')
     df['fixreverter_trigger_covered'] = (
         df.groupby(grouping3)['trigger_cumsum'].transform('max').astype(int))
-    new_df = df.drop(columns=['trigger_cumsum', 'firsts'])
+    new_df = df.drop(columns=['trigger_cumsum', 'firsts', 'fixreverter_trigger_key']).drop_duplicates(subset=grouping3)
     return new_df
 
+def add_fixreverter_crash_covered_column(experiment_df):
+    """Return a modified experiment df in which adds a |fixreverter_crash_covered| column,
+    a cumulative count of fixreverter injections crashed over time."""
+    grouping1 = ['fuzzer', 'benchmark', 'trial_id', 'fixreverter_crash_key']
+    grouping2 = ['fuzzer', 'benchmark', 'trial_id']
+    grouping3 = ['fuzzer', 'benchmark', 'trial_id', 'time']
+    df = experiment_df.sort_values(grouping3)
+    df = df.assign(fixreverter_crash_key=df['fr_crashes'].str.split(',')).explode('fixreverter_crash_key')
+    df['firsts'] = ~df.duplicated(subset=grouping1) & ~df.fixreverter_crash_key.isna()
+    df['crash_cumsum'] = df.groupby(grouping2)['firsts'].transform('cumsum')
+    df['fixreverter_crash_covered'] = (
+        df.groupby(grouping3)['crash_cumsum'].transform('max').astype(int))
+    new_df = df.drop(columns=['crash_cumsum', 'firsts', 'fixreverter_crash_key']).drop_duplicates(subset=grouping3)
+    return new_df
 
 # Creating "snapshots" (see README.md for definition).
 

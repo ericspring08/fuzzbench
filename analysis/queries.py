@@ -15,7 +15,7 @@
 
 import pandas as pd
 
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 
 from database.models import Experiment, Trial, Snapshot, Crash, FixReverterReach, FixReverterTrigger, FixReverterCrash
 from database import utils as db_utils
@@ -24,28 +24,38 @@ from database import utils as db_utils
 def get_experiment_data(experiment_names):
     """Get measurements (such as coverage) on experiments from the database."""
 
+    concat_crash = db_utils.query(
+        Crash.time, Crash.trial_id, func.group_concat(Crash.crash_key).label("crashes")).group_by(Crash.time, Crash.trial_id).subquery()
+
+    concat_fr_reach = db_utils.query(
+        FixReverterReach.time, FixReverterReach.trial_id, func.group_concat(FixReverterReach.fixreverter_reach_key.op(',')(text('"+"'))).label("fr_reaches")).group_by(FixReverterReach.time, FixReverterReach.trial_id).subquery()
+    concat_fr_trigger = db_utils.query(
+        FixReverterTrigger.time, FixReverterTrigger.trial_id, func.group_concat(FixReverterTrigger.fixreverter_trigger_key.op(',')(text('"+"'))).label("fr_triggers")).group_by(FixReverterTrigger.time, FixReverterTrigger.trial_id).subquery()
+    concat_fr_crash = db_utils.query(
+        FixReverterCrash.time, FixReverterCrash.trial_id, func.group_concat(FixReverterCrash.fixreverter_crash_key.op(',')(text('"+"'))).label("fr_crashes")).group_by(FixReverterCrash.time, FixReverterCrash.trial_id).subquery()
+
     snapshots_query = db_utils.query(
         Experiment.git_hash, Experiment.experiment_filestore,
         Trial.experiment, Trial.fuzzer, Trial.benchmark,
         Trial.time_started, Trial.time_ended,
         Snapshot.trial_id, Snapshot.time, Snapshot.edges_covered,
-        Snapshot.fuzzer_stats, Crash.crash_key,
-        FixReverterReach.fixreverter_reach_key,FixReverterTrigger.fixreverter_trigger_key, FixReverterCrash.fixreverter_crash_key)\
+        Snapshot.fuzzer_stats, concat_crash.c.crashes,
+        concat_fr_reach.c.fr_reaches,concat_fr_trigger.c.fr_triggers, concat_fr_crash.c.fr_crashes)\
         .select_from(Experiment)\
         .join(Trial)\
         .join(Snapshot)\
-        .join(Crash,
-              and_(Snapshot.time == Crash.time,
-                   Snapshot.trial_id == Crash.trial_id), isouter=True)\
-        .join(FixReverterReach,
-              and_(Snapshot.time == FixReverterReach.time,
-                   Snapshot.trial_id == FixReverterReach.trial_id), isouter=True)\
-        .join(FixReverterTrigger,
-              and_(Snapshot.time == FixReverterTrigger.time,
-                   Snapshot.trial_id == FixReverterTrigger.trial_id), isouter=True)\
-        .join(FixReverterCrash,
-              and_(Snapshot.time == FixReverterCrash.time,
-                   Snapshot.trial_id == FixReverterCrash.trial_id), isouter=True)\
+        .join(concat_crash,
+              and_(Snapshot.time == concat_crash.c.time,
+                   Snapshot.trial_id == concat_crash.c.trial_id), isouter=True)\
+        .join(concat_fr_reach,
+              and_(Snapshot.time == concat_fr_reach.c.time,
+                   Snapshot.trial_id == concat_fr_reach.c.trial_id), isouter=True)\
+        .join(concat_fr_trigger,
+              and_(Snapshot.time == concat_fr_trigger.c.time,
+                   Snapshot.trial_id == concat_fr_trigger.c.trial_id), isouter=True)\
+        .join(concat_fr_crash,
+              and_(Snapshot.time == concat_fr_crash.c.time,
+                   Snapshot.trial_id == concat_fr_crash.c.trial_id), isouter=True)\
         .filter(Experiment.name.in_(experiment_names))\
         .filter(Trial.preempted.is_(False))
 

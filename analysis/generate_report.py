@@ -187,6 +187,9 @@ def generate_report(experiment_names,
     # Add |fixreverter_trigger_covered| column prior to export.
     experiment_df = data_utils.add_fixreverter_trigger_covered_column(experiment_df)
 
+    # Add |fixreverter_crash_covered| column prior to export.
+    experiment_df = data_utils.add_fixreverter_crash_covered_column(experiment_df)
+
     # Save the filtered raw data along with the report if not using cached data
     # or if the data does not exist.
     if not from_cached_data or not os.path.exists(data_path):

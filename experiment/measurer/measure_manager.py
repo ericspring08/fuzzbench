@@ -553,12 +553,12 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
         reaches = []
         for i in fixreverter_cov.reaches:
           reaches.append(
-                models.FixReverterReach(fixreverter_reach_key = f'{self.benchmark}:{i}'))
+                models.FixReverterReach(str(i))
 
         triggers = []
         for i in fixreverter_cov.triggers:
           triggers.append(
-                models.FixReverterTrigger(fixreverter_trigger_key = f'{self.benchmark}:{i}'))
+                models.FixReverterTrigger(str(i))
           
         return fixreverter_run_coverage.FixReverterCov(reaches, triggers)
 
@@ -572,7 +572,7 @@ class SnapshotMeasurer(coverage_utils.TrialCoverage):  # pylint: disable=too-man
         logs.info('Processing fixreverter crashes for cycle %d.', cycle)
         app_binary = coverage_utils.get_coverage_binary(self.benchmark)
         crash_metadata = fixreverter_run_crashes.do_crashes_run(app_binary,
-                                                    self.crashes_dir, self.benchmark)
+                                                    self.crashes_dir)
 
         crashes = []
         for crash_key in crash_metadata:
