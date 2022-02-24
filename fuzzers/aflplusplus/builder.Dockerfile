@@ -21,6 +21,7 @@ RUN apt-get update && \
                        libglib2.0-dev libpixman-1-dev python3-setuptools unzip \
                        apt-utils apt-transport-https ca-certificates
 
+# AFL++ version 8fc249d210ad49e3dd88d1409877ca64d9884690
 COPY afl /afl
 
 # Build without Python support as we don't need it.
