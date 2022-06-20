@@ -40,7 +40,7 @@ else:
 # FIXME: Use 10 as default quota.
 # Even though it says queueing happen, we end up exceeding limits on "get", so
 # be conservative. Use 30 for now since this is limit for FuzzBench service.
-DEFAULT_MAX_CONCURRENT_BUILDS = 30
+DEFAULT_MAX_CONCURRENT_BUILDS = 1
 
 # Build fail retries and wait interval.
 NUM_BUILD_RETRIES = 3
