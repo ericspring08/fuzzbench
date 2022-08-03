@@ -22,7 +22,7 @@ RUN apt-get update && \
                        apt-utils apt-transport-https ca-certificates
 
 # AFL++ version 8fc249d210ad49e3dd88d1409877ca64d9884690
-RUN git clone -b perf_inst https://github.com/SlaterLatiao/AFLplusplus.git /afl
+RUN git clone -b instrument https://github.com/ericspring08/AFLplusplus.git /afl
 
 # Build without Python support as we don't need it.
 # Set AFL_NO_X86 to skip flaky tests.

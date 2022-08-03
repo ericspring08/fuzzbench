@@ -1,0 +1,20 @@
+benchmarks:
+- sqlite3_ossfuzz
+concurrent_builds: null
+description: null
+docker_registry: gcr.io/fuzzbench
+experiment: instrument
+experiment_filestore: /home/eric/experiment-data
+fuzzers:
+- aflplusplus
+git_hash: 95b8be0f9474e8f8788924413985510304568b92
+local_experiment: true
+max_total_time: 86400
+no_dictionaries: false
+no_seeds: false
+oss_fuzz_corpus: false
+report_filestore: /home/eric/report-data
+runner_machine_type: n1-standard-1
+runner_memory: 12GB
+runner_num_cpu_cores: 1
+trials: 1
