@@ -18,7 +18,7 @@ services:
     command: python3 fuzzbench/worker.py
     volumes:
       # Allow access to the host's docker daemon.
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/user/1015/docker.sock:/var/run/user/1015/docker.sock
     links:
       - queue-server
     depends_on:
