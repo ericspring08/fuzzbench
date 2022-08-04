@@ -381,7 +381,7 @@ class LocalDispatcher(BaseDispatcher):
             '-ti',
             '--rm',
             '-v',
-            '/var/run/docker.sock:/var/run/docker.sock',
+            '/var/run/user/1015/docker.sock:/var/run/user/1015/docker.sock',
             '-v',
             shared_experiment_filestore_arg,
             '-v',
