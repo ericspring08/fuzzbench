@@ -7,7 +7,7 @@ experiment: instrument
 experiment_filestore: /home/eric/experiment-data
 fuzzers:
 - aflplusplus
-git_hash: 95b8be0f9474e8f8788924413985510304568b92
+git_hash: d4e201c6fbf9bffc14a2a85537cf4374c8bb3a56
 local_experiment: true
 max_total_time: 86400
 no_dictionaries: false
